@@ -1,68 +1,90 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
+    <ion-header>
       <ion-toolbar>
-        <ion-title>Blank</ion-title>
+        <ion-title>Logged In</ion-title>
       </ion-toolbar>
     </ion-header>
-    
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
-    
-      <div id="container">
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-      </div>
+
+    <ion-content>
+      <ion-button @click="handleGetUserDetails()">Get User Details</ion-button>
+      <ion-button @click="handleRefresh()">Refresh Token</ion-button>
+      <ion-button @click="handleSignOut()">Sign Out</ion-button>
+
+      <ion-card v-if="event !== ''">
+        <ion-card-header>
+          Action Data
+        </ion-card-header>
+        <ion-card-content>
+          {{event}}
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card v-if="user !== ''">
+        <ion-card-header>
+          User Info
+        </ion-card-header>
+        <ion-card-content>
+          {{user}}
+        </ion-card-content>
+      </ion-card>
     </ion-content>
   </ion-page>
 </template>
 
 <script lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonCard, IonCardContent, IonCardHeader, IonButton } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import { Auth } from '@/services/AuthService';
+import { AuthActions } from 'ionic-appauth';
+import { Subscription } from 'rxjs';
 
 export default defineComponent({
   name: 'Home',
+  data() {
+    return {
+        event: '',
+        user: '',
+        subs: [] as Subscription[]
+    };
+  },
+  created () {
+    this.subs.push(
+            Auth.Instance.events$.subscribe((action) => {
+                this.event = JSON.stringify(action);
+                if (action.action === AuthActions.SignOutSuccess) {
+                    this.$router.push('/landing');
+                }
+            }),
+            Auth.Instance.user$.subscribe((user) => {
+                this.user = JSON.stringify(user);
+            })
+    );
+  },
+  beforeUnmount () {
+      this.subs.forEach(sub => sub.unsubscribe());
+  },
+  methods: {
+    handleSignOut() {
+        Auth.Instance.signOut();
+    },
+    handleRefresh() {
+        Auth.Instance.refreshToken();
+    },
+    handleGetUserDetails() {
+        Auth.Instance.loadUserInfo();
+    }
+  },
   components: {
     IonContent,
     IonHeader,
     IonPage,
     IonTitle,
-    IonToolbar
+    IonToolbar,
+    IonCard, 
+    IonCardContent, 
+    IonCardHeader, 
+    IonButton
   }
 });
 </script>
-
-<style scoped>
-#container {
-  text-align: center;
-  
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  
-  color: #8c8c8c;
-  
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
-}
-</style>
