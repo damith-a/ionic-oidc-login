@@ -18,7 +18,7 @@ export class Auth {
     );
     authService.authConfig = {
       client_id: "appauth_test",
-      server_host: "https://pan.mylabora.com/IdentityServer4",
+      server_host: "https://sample.identityserver4",
       redirect_url: isPlatform("capacitor")
         ? "io.ionic.starter://authcallback"
         : window.location.origin + "/authcallback",
